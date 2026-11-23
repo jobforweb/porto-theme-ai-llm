@@ -1,99 +1,99 @@
 # Porto Child + Ollama LLM Bridge
 
-Готовое решение для дочерней темы **Porto Child**, которое переключает встроенный AI-генератор контента темы Porto с OpenAI на собственный сервер **Ollama** с OpenAI-совместимым API.
+A ready-to-use solution for the **Porto Child** child theme that switches Porto's built-in AI content generator from OpenAI to your own **Ollama** server with an OpenAI-compatible API.
 
-Решение позволяет продолжать пользоваться родным интерфейсом Porto (генерация описаний товаров, excerpt, meta title/meta description, outline и т.д.), но вместо платного OpenAI API запросы уходят на локальный или контрольный сервер с моделью `qwen3.6:27b-coding`.
-
----
-
-## Что дает доработка
-
-- Подмена модели OpenAI на модель Ollama через нативный фильтр Porto `porto_ai_model`.
-- Подстановка заглушки API-ключа, потому что Porto требует заполненное поле ключа даже при работе с Ollama.
-- Адаптация тела запроса под Ollama:
-  - отключение потоковой передачи (`stream: false`);
-  - отключение внутренних «рассуждений» модели (`think: false`);
-  - удаление параметров, специфичных для OpenAI;
-  - добавление инструкции в system prompt, чтобы модель сразу возвращала чистый текст.
-- Перенаправление HTTP-запроса с `https://api.openai.com/v1/` на адрес Ollama-сервера.
-- Увеличение таймаутов: PHP-запрос — 120 секунд, браузерный AJAX — 120 секунд.
-- Сохранение нативных значений Porto для `max_tokens` и `temperature`, если они явно не переопределены константами.
+The solution lets you keep using Porto's native interface (product descriptions, excerpts, meta titles/meta descriptions, outlines, etc.), but instead of the paid OpenAI API, requests are sent to a local or self-hosted server running `qwen3.6:27b-coding`.
 
 ---
 
-## Требования
+## What the customization provides
 
-- WordPress с активной темой **Porto** и активной дочерней темой **Porto Child**.
-- Версия Porto с поддержкой AI-функционала и фильтров `porto_ai_*`.
-- Работающий сервер Ollama с OpenAI-совместимым эндпоинтом:
+- Replaces the OpenAI model with an Ollama model via Porto's native `porto_ai_model` filter.
+- Substitutes a dummy API key because Porto requires a non-empty key field even when working with Ollama.
+- Adapts the request body for Ollama:
+  - disables streaming (`stream: false`);
+  - disables the model's internal "thinking" (`think: false`);
+  - removes OpenAI-specific parameters;
+  - adds an instruction to the system prompt so the model returns clean text immediately.
+- Redirects the HTTP request from `https://api.openai.com/v1/` to the Ollama server address.
+- Increases timeouts: PHP request — 120 seconds, browser AJAX — 120 seconds.
+- Preserves Porto's native values for `max_tokens` and `temperature` unless they are explicitly overridden by constants.
+
+---
+
+## Requirements
+
+- WordPress with the **Porto** theme and the active **Porto Child** child theme.
+- A Porto version with AI support and `porto_ai_*` filters.
+- A working Ollama server with an OpenAI-compatible endpoint:
 
 ```text
 http://HOST:PORT/v1/chat/completions
 ```
 
-- Модель Ollama, загруженная на сервере. В конфигурации по умолчанию используется:
+- An Ollama model loaded on the server. The default configuration uses:
 
 ```text
 qwen3.6:27b-coding
 ```
 
-- Сетевая доступность сервера WordPress к серверу Ollama.
-- Заполненное поле API-ключа в настройках AI темы Porto. Фактически это может быть любая непустая строка, например `sk-ollama-local`.
+- Network connectivity from the WordPress server to the Ollama server.
+- A filled API key field in Porto's AI settings. In fact, it can be any non-empty string, for example `sk-ollama-local`.
 
 ---
 
-## Установка
+## Installation
 
-1. Скопируйте файл `functions.php` в каталог дочерней темы:
+1. Copy the `functions.php` file into the child theme directory:
 
 ```text
 wp-content/themes/porto-child/functions.php
 ```
 
-2. Если в дочерней теме уже есть файл `functions.php`, перенесите в него блок, начинающийся с комментария:
+2. If the child theme already has a `functions.php` file, move the block that starts with the following comment into it:
 
 ```php
 // Связка Ollama + Porto
 ```
 
-   Блок загрузки CSS в начале файла можно оставить как есть — это стандартная часть дочерней темы Porto.
+   The CSS loading block at the beginning of the file can be left as is — it is a standard part of the Porto child theme.
 
-3. Откройте настройки темы:
+3. Open the theme settings:
 
 ```text
 Porto → Theme Options → AI
 ```
 
-   и укажите любой непустой API-ключ, например:
+   and enter any non-empty API key, for example:
 
 ```text
 sk-ollama-local
 ```
 
-4. Настройте константы под свой сервер Ollama.
+4. Adjust the constants for your Ollama server.
 
-5. Сохраните файл и проверьте генерацию через стандартный интерфейс Porto: запись, страница или товар WooCommerce → блок Porto AI → Generate.
+5. Save the file and test generation through Porto's standard interface: post, page, or WooCommerce product → Porto AI block → Generate.
 
-> Важно: не редактируйте родительскую тему `porto`. Все изменения находятся только в `porto-child`, поэтому обновления родительской темы не удалят доработку.
+> Important: do not edit the parent `porto` theme. All changes live only in `porto-child`, so parent theme updates will not remove the customization.
 
 ---
 
-## Настройки
+## Settings
 
-Все настройки вынесены в константы в начале блока Ollama. Константы можно изменить прямо в `functions.php` или определить в `wp-config.php` до загрузки темы.
+All settings are defined as constants at the beginning of the Ollama block. You can change them directly in `functions.php` or define them in `wp-config.php` before the theme is loaded.
 
-| Константа | Значение по умолчанию | Назначение |
+| Constant | Default value | Purpose |
 |---|---:|---|
-| `PORTO_AI_MODEL` | `qwen3.6:27b-coding` | Имя модели в Ollama. Должно точно совпадать с `ollama list`. |
-| `PORTO_OLLAMA_URL` | `http://127.0.0.1:11434/v1/` | Базовый OpenAI-совместимый URL Ollama. Обязательно с завершающим `/v1/`. |
-| `PORTO_OLLAMA_TIMEOUT` | `120` | Таймаут PHP-запроса к Ollama в секундах. |
-| `PORTO_JS_TIMEOUT` | `120000` | Таймаут браузерного AJAX в миллисекундах. Должен быть не меньше `PORTO_OLLAMA_TIMEOUT * 1000`. |
-| `PORTO_OLLAMA_DISABLE_THINKING` | `true` | Передает в Ollama `think: false`. Рекомендуется оставлять включенным. |
-| `PORTO_OLLAMA_SYSTEM_HINT` | строка-инструкция | Добавляется к system prompt Porto и запрещает модели уходить в рассуждения. |
-| `PORTO_OLLAMA_MAX_TOKENS_OVERRIDE` | не задана | Если задать число, жестко переопределяет `max_tokens` для всех типов генерации. По умолчанию используются значения Porto. |
-| `PORTO_OLLAMA_TEMPERATURE_OVERRIDE` | не задана | Если задать число, жестко переопределяет `temperature`. По умолчанию используются значения Porto. |
+| `PORTO_AI_MODEL` | `qwen3.6:27b-coding` | Model name in Ollama. Must exactly match `ollama list`. |
+| `PORTO_OLLAMA_URL` | `http://127.0.0.1:11434/v1/` | Base OpenAI-compatible Ollama URL. Must end with `/v1/`. |
+| `PORTO_OLLAMA_TIMEOUT` | `120` | PHP request timeout to Ollama, in seconds. |
+| `PORTO_JS_TIMEOUT` | `120000` | Browser AJAX timeout in milliseconds. Must be at least `PORTO_OLLAMA_TIMEOUT * 1000`. |
+| `PORTO_OLLAMA_DISABLE_THINKING` | `true` | Sends `think: false` to Ollama. Recommended to keep enabled. |
+| `PORTO_OLLAMA_SYSTEM_HINT` | instruction string | Appended to Porto's system prompt and prevents the model from reasoning. |
+| `PORTO_OLLAMA_MAX_TOKENS_OVERRIDE` | not set | If set to a number, hard-overrides `max_tokens` for all generation types. Porto values are used by default. |
+| `PORTO_OLLAMA_TEMPERATURE_OVERRIDE` | not set | If set to a number, hard-overrides `temperature`. Porto values are used by default. |
 
-### Пример конфигурации
+### Example configuration
 
 ```php
 define( 'PORTO_AI_MODEL', 'qwen3.6:27b-coding' );
@@ -102,18 +102,18 @@ define( 'PORTO_OLLAMA_TIMEOUT', 120 );
 define( 'PORTO_JS_TIMEOUT', 120000 );
 define( 'PORTO_OLLAMA_DISABLE_THINKING', true );
 
-// Для длинных текстов можно включить принудительный лимит:
+// For long texts, you can enable a forced limit:
 // define( 'PORTO_OLLAMA_MAX_TOKENS_OVERRIDE', 2048 );
 
-// Для более предсказуемых ответов:
+// For more predictable responses:
 // define( 'PORTO_OLLAMA_TEMPERATURE_OVERRIDE', 0.7 );
 ```
 
-### Значения Porto, которые сохраняются по умолчанию
+### Porto values preserved by default
 
-Пока не заданы константы переопределения, традиционные параметры Porto остаются без изменений:
+Until override constants are set, Porto's traditional parameters remain unchanged:
 
-| Параметр | Тип контента | Значение Porto |
+| Parameter | Content type | Porto value |
 |---|---|---:|
 | `max_tokens` | content | 2048 |
 | `max_tokens` | excerpt | 64 |
@@ -123,25 +123,25 @@ define( 'PORTO_OLLAMA_DISABLE_THINKING', true );
 | `temperature` | excerpt | 0.1 |
 | `temperature` | meta description | 0.3 |
 
-Точные значения зависят от версии темы Porto; после обновления темы имеет смысл повторно проверить генерацию.
+Exact values depend on the Porto theme version; after a theme update, it is worth re-checking generation.
 
 ---
 
-## Подготовка Ollama
+## Preparing Ollama
 
-На сервере Ollama выполните:
+On the Ollama server, run:
 
 ```bash
 ollama pull qwen3.6:27b-coding
 ```
 
-Если Ollama запущена на другой машине, убедитесь, что она слушает не только `127.0.0.1`. Например:
+If Ollama runs on another machine, make sure it listens on more than `127.0.0.1`. For example:
 
 ```bash
 OLLAMA_HOST=0.0.0.0:11222 ollama serve
 ```
 
-Далее проверьте доступность API с того сервера, где работает WordPress:
+Then check API availability from the server where WordPress runs:
 
 ```bash
 curl -sS -X POST "http://HOST:PORT/v1/chat/completions" \
@@ -151,74 +151,74 @@ curl -sS -X POST "http://HOST:PORT/v1/chat/completions" \
     "stream": false,
     "think": false,
     "messages": [
-      {"role": "user", "content": "Скажи ОК"}
+      {"role": "user", "content": "Say OK"}
     ]
   }'
 ```
 
-В ответе должен быть JSON с полем `choices[0].message.content`.
+The response should be JSON with a `choices[0].message.content` field.
 
 ---
 
-## Как работает связка
+## How the bridge works
 
-1. Пользователь нажимает Generate в AI-блоке Porto.
-2. Porto отправляет AJAX-запрос `action=porto_ai_generate`.
-3. Фильтры `porto_ai_model`, `porto_ai_openai_key` и `porto_ai_request_body` подготавливают запрос.
-4. Хук `pre_http_request` перехватывает только запросы к `api.openai.com` и заменяет адрес на Ollama.
-5. Ответ Ollama возвращается в Porto в том же формате, в котором его ожидает тема.
-6. Дополнительный JS-перехватчик увеличивает таймаут AJAX только для запросов Porto AI на экранах записи и страницы.
+1. The user clicks Generate in Porto's AI block.
+2. Porto sends an AJAX request with `action=porto_ai_generate`.
+3. The `porto_ai_model`, `porto_ai_openai_key`, and `porto_ai_request_body` filters prepare the request.
+4. The `pre_http_request` hook intercepts only requests to `api.openai.com` and replaces the address with Ollama.
+5. The Ollama response is returned to Porto in the format the theme expects.
+6. An additional JS interceptor increases the AJAX timeout only for Porto AI requests on post and page screens.
 
-Другие внешние HTTP-запросы WordPress не затрагиваются.
-
----
-
-## Проверка работоспособности
-
-1. В терминале Ollama при нажатии Generate должна появляться строка `POST /v1/chat/completions`.
-2. В браузере: `F12 → Network → Fetch/XHR` — запрос `admin-ajax.php` с `action=porto_ai_generate` должен завершаться статусом `200`.
-3. В ответе должен появиться сгенерированный текст, вставленный в поле Porto.
-4. Для коротких промптов ответ приходит быстро; для описаний примерно на 10 предложений генерация стабильна на тестовом продакшн-хостинге.
+Other external WordPress HTTP requests are not affected.
 
 ---
 
-## Известные ограничения
+## Verification
 
-- Генерация примерно до **10 предложений** работает стабильно.
-- Запросы на **20 и более предложений** могут завершаться ошибкой `Request time is out`. Это ограничение инфраструктуры: веб-сервер/хостинг может обрывать длинные PHP-запросы, даже если в коде заданы увеличенные таймауты.
-- Если длинные тексты нужны регулярно, используйте один из подходов:
-  - увеличить на хостинге `fastcgi_read_timeout`, `proxy_read_timeout` и `max_execution_time`;
-  - генерировать текст частями: введение, основная часть, заключение;
-  - использовать более быструю модель Ollama;
-  - при необходимости реализовать фоновую очередь генерации отдельно.
-- Текущая версия не содержит асинхронной очереди: запрос остается синхронным, чтобы сохранить родную логику Porto и не ломать интерфейс темы.
+1. The Ollama terminal should show `POST /v1/chat/completions` when Generate is pressed.
+2. In the browser: `F12 → Network → Fetch/XHR` — the `admin-ajax.php` request with `action=porto_ai_generate` should return status `200`.
+3. The response should contain generated text inserted into Porto's field.
+4. Short prompts return quickly; descriptions of about 10 sentences generate reliably on the tested production hosting.
 
 ---
 
-## Диагностика типовых ошибок
+## Known limitations
 
-| Симптом | Что проверить |
+- Generation of up to about **10 sentences** works reliably.
+- Requests for **20 or more sentences** may fail with `Request time is out`. This is an infrastructure limitation: the web server/hosting may cut off long PHP requests even if increased timeouts are set in the code.
+- If long texts are needed regularly, use one of the following approaches:
+  - increase `fastcgi_read_timeout`, `proxy_read_timeout`, and `max_execution_time` on the hosting;
+  - generate text in parts: introduction, main body, conclusion;
+  - use a faster Ollama model;
+  - implement a background generation queue separately if needed.
+- The current version does not include an asynchronous queue: the request remains synchronous in order to preserve Porto's native logic and avoid breaking the theme interface.
+
+---
+
+## Troubleshooting common errors
+
+| Symptom | What to check |
 |---|---|
-| `Request Failed` сразу после нажатия | URL Ollama, порт, модель, доступность эндпоинта с сервера WordPress. |
-| `cURL error 28` / таймаут | Значения `PORTO_OLLAMA_TIMEOUT` и `PORTO_JS_TIMEOUT`, лимиты хостинга, скорость модели. |
-| `No content was generated` | Убедитесь, что `PORTO_OLLAMA_DISABLE_THINKING = true`; проверьте, что модель возвращает непустой `content`. |
-| Текст обрывается на середине слова | Увеличьте `PORTO_OLLAMA_MAX_TOKENS_OVERRIDE`, но помните про таймауты. |
-| 10 предложений работает, 20 — нет | Ограничение хостинга или браузера; уменьшите объем за один запрос либо измените настройки сервера. |
-| Porto пишет об ошибке ключа | В настройках Porto AI поле API Key должно быть заполнено любым непустым значением. |
+| `Request Failed` immediately after clicking | Ollama URL, port, model, endpoint availability from the WordPress server. |
+| `cURL error 28` / timeout | Values of `PORTO_OLLAMA_TIMEOUT` and `PORTO_JS_TIMEOUT`, hosting limits, model speed. |
+| `No content was generated` | Make sure `PORTO_OLLAMA_DISABLE_THINKING = true`; check that the model returns a non-empty `content`. |
+| Text is cut off in the middle of a word | Increase `PORTO_OLLAMA_MAX_TOKENS_OVERRIDE`, but keep timeouts in mind. |
+| 10 sentences work, 20 do not | Hosting or browser limit; reduce the volume per request or change server settings. |
+| Porto reports a key error | The API Key field in Porto AI settings must be filled with any non-empty value. |
 
 ---
 
-## Безопасность
+## Security
 
-- Ollama API по умолчанию не требует авторизации. Не публикуйте порт Ollama в открытом интернете без фаервола, VPN или защищенного туннеля.
-- В коде намеренно отключена проверка SSL (`sslverify = false`), чтобы связка работала с локальными и туннельными адресами. Используйте только доверенные каналы.
-- После обновления Porto или Ollama обязательно повторно проверяйте генерацию: тема может изменить имена хуков или формат запроса.
+- The Ollama API does not require authorization by default. Do not expose the Ollama port to the public internet without a firewall, VPN, or protected tunnel.
+- SSL verification is intentionally disabled in the code (`sslverify = false`) so the bridge works with local and tunnel addresses. Use only trusted channels.
+- After updating Porto or Ollama, always re-test generation: the theme may change hook names or the request format.
 
 ---
 
-## Структура репозитория
+## Repository structure
 
-| Файл | Назначение |
+| File | Purpose |
 |---|---|
-| `functions.php` | Файл дочерней темы Porto со стандартной загрузкой стилей и блоком интеграции Ollama. |
-| `README.md` | Описание проекта, установка, настройка и диагностика. |
+| `functions.php` | Porto child theme file with standard style loading and the Ollama integration block. |
+| `README.md` | Project description, installation, configuration, and troubleshooting. |
